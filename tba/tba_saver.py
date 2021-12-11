@@ -1,6 +1,6 @@
 import json
 
-from dataconstants import EVENT, TBA_SAVE_FILE
+from dataconstants import TBA_SAVE_FILE
 from tba.tba import Event
 
 

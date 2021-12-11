@@ -1,11 +1,12 @@
 import os
 import re
 import subprocess as sub
-
+import sys
 from sys import platform
 from time import sleep
 
 from interface import printing
+
 
 # Runs a command in the shell
 def _run(command):
@@ -23,21 +24,19 @@ def _run(command):
         printing.printf(e, style=printing.ERROR)
 
 
+def is_windows():
+    return sys.platform.startswith("win")
+
+
 # From https://askubuntu.com/questions/938255/
 def find_usb_partitions():
-    parts = tuple(
+    if is_windows():
+        return []
+    return tuple(
         os.path.realpath(os.path.join("/dev/disk/by-id", p))
         for p in os.listdir("/dev/disk/by-id")
-        if p.startswith("usb-")
+        if p.startswith("usb-") and p.rstrip("0123456789") != p
     )
-    # parts_numbered = set()
-    # for p in parts:
-    # p_strip = p.rstrip('0123456789')
-    # if p != p_strip:
-    # parts_numbered.add(p_strip)
-    # parts = tuple(p for p in parts if p not in parts_numbered)
-    # del parts_numbered
-    return tuple(p for p in parts if p.rstrip("0123456789") != p)
 
 
 def find_mounted_usbs():
@@ -55,6 +54,7 @@ def checkdev():
 
 
 def get_mount_point(block):
+    assert not is_windows()
     p = _run("udisksctl info -b " + block)
     if p[1]:
         return None
@@ -67,15 +67,24 @@ def get_mount_point(block):
         )
 
 
-# Mounts a flash drive
-def mount():
-    devs = find_usb_partitions()
-    if not devs:
-        return None
-    dev = [d for d in devs if d not in find_mounted_usbs()]
-    if not dev:
-        loc = get_mount_point(devs[0])
-        if loc:
+def mount(drive=None):
+    """Mounts a flash drive
+
+    :param drive: The location of the flash drive or ``None`` if it should be found automatically"""
+    if is_windows():
+        # Assume Windows just automatically mounts it
+        return
+
+    if not drive:
+        # If the drive wasn't given to us, find it automatically
+        devs = find_usb_partitions()
+        if not devs:
+            return None
+        dev = [d for d in devs if d not in find_mounted_usbs()]
+        if not dev:
+            loc = get_mount_point(devs[0])
+            if not loc:
+                return None
             printing.printf(
                 "Drive " + devs[0] + " already mounted to " + loc,
                 style=printing.YELLOW,
@@ -83,21 +92,22 @@ def mount():
                 logtag="system.mount",
             )
             return loc
-        else:
-            return None
+
+        drive = dev[0]
+        printing.printf(
+            "Found drive at " + drive + ", attempting to mount ...",
+            end=" ",
+            style=printing.FLASH_DRIVE,
+        )
+
     done = 0
-    printing.printf(
-        "Found drive at " + dev[0] + ", attempting to mount ...",
-        end=" ",
-        style=printing.FLASH_DRIVE,
-    )
     while done < 10:
-        p = _run("udisksctl mount -b " + dev[0])
+        p = _run("udisksctl mount -b " + drive)
         error_string = p[1].decode("utf-8").strip("\n")
         if "AlreadyMounted" in error_string:
-            loc = get_mount_point(dev[0])
+            loc = get_mount_point(drive)
             printing.printf(
-                "Drive " + dev[0] + " already mounted to " + loc,
+                "Drive " + drive + " already mounted to " + loc,
                 style=printing.YELLOW,
                 log=True,
                 logtag="system.mount",
@@ -134,10 +144,14 @@ def copy(fin, fout):
     # with open(fout, 'w') as f:
     # f.write(open(fin).read())
     # copyfile(fin, fout)
-    p = _run("cp " + fin + " " + fout)
-    if p[1]:
+
+    if is_windows():
+        _, err = _run(f"echo F | xcopy /Y {fin} {fout}")
+    else:
+        _, err = _run(f"cp {fin} {fout}")
+    if err:
         printing.printf(
-            "Error copying: " + p[1].decode("utf-8"),
+            "Error copying: " + err.decode("utf-8"),
             style=printing.ERROR,
             log=True,
             logtag="system.copy.error",
@@ -153,6 +167,10 @@ def copy(fin, fout):
 
 # Unmounts the flash drive
 def unmount():
+    if is_windows():
+        # Let the user take care of it
+        return
+
     for dev in find_mounted_usbs():
         printing.printf(
             "Unmounting drive from " + dev + " ...",
@@ -181,20 +199,23 @@ def unmount():
 # Finds the MAC address of the bluetooth adapter
 # If hcitool is not installed, you can change the script to use some other command,
 #   or you can just find it manually and hard code it in
-def gethostMAC():
+def get_host_mac():
     out = ""
     try:
         if platform == "linux":
-            out = _run("hcitool dev")
-            return out[0].decode("utf8").split("\n")[1].split()[1]
+            out, _ = _run("hcitool dev")
+            return out.decode("utf8").split("\n")[1].split()[1]
         elif platform == "darwin":  # macOS
             # Mac is not yet fully supported
-            out = _run("system_profiler SPBluetoothDataType")
-            return out[0].decode("utf8").split("\n")[5].split()[1]
-        elif platform.startswith("win"):
+            out, _ = _run("system_profiler SPBluetoothDataType")
+            return out.decode("utf8").split("\n")[5].split()[1]
+        elif is_windows():
             out, _ = _run("ipconfig /all")
             # TODO this is very janky, may break at some point
-            matched = re.search(r"Bluetooth.*?Physical Address *(\. )*: *(?P<mac>[A-Za-z0-9-]{17})", str(out))
+            matched = re.search(
+                r"Bluetooth.*?Physical Address *(\. )*: *(?P<mac>[A-Za-z0-9-]{17})",
+                str(out),
+            )
             if matched:
                 mac = matched.group("mac")
                 return mac.replace("-", ":")
@@ -213,7 +234,7 @@ def gethostMAC():
                 logtag="system.gethostMAC",
             )
     except IndexError:
-        if out[0]:
+        if out:
             printing.printf(
                 "No bluetooth adapter available",
                 style=printing.ERROR,

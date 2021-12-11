@@ -11,14 +11,18 @@ except FileNotFoundError:
         "TEAM": input("Team number (e.g. 449) "),
         "EVENT": input("TBA event id (e.g. '2020mdbet') "),
     }
+    drive = input("Flash drive location (e.g. 'D:') (default none) ")
+    local_constants["DRIVE"] = drive
     with open(LOCAL_CONSTANTS_FILE, "w") as f:
         json.dump(local_constants, f)
 
 JSON_FILE = local_constants["DATA_FILE_NAME"] + ".json"
 CSV_FILE = local_constants["DATA_FILE_NAME"] + ".csv"
 ABS_DATA_DIR = local_constants["ABS_DATA_DIR"]
-EVENT = local_constants["EVENT"]
 TEAM = local_constants["TEAM"]
+EVENT = local_constants["EVENT"]
+# The location of the removable device to copy data to
+DRIVE = local_constants["DRIVE"]
 
 TBA_SAVE_FILE = "tba.json"
 
@@ -74,7 +78,7 @@ def _create_fields_enum():
     """
 
     def to_camel_case(snake):
-        pass
+        return "".join(part.title() for part in snake.split("_"))
 
     name_dict = {name: to_camel_case(name) for name in column_names}
     fields_enum = type("Enum", (), name_dict)

@@ -1,9 +1,12 @@
 import json
+import os
+import shutil
 from queue import Queue
 
-from dataconstants import Fields, ABS_DATA_DIR, JSON_FILE, CSV_FILE, ORDER
-from controllers import systemctl
+import dataconstants
 import interface.printing as printing
+from controllers import systemctl
+from dataconstants import Fields, ABS_DATA_DIR, JSON_FILE, CSV_FILE, ORDER
 
 
 class DataController:
@@ -12,10 +15,8 @@ class DataController:
     data_changed = True
 
     def __init__(self):
-        try:
-            self.data = load_json_file()
-        except:
-            pass
+        self.data = load_json_file()
+        self.drive = dataconstants.DRIVE
 
     def queue_data(self, data, source):
         self.data_queue.put((data, source))
@@ -33,9 +34,23 @@ class DataController:
             self.data_changed = True
 
         # If there is a flash drive and there is new data for it, upload the data
-        if self.data_changed and systemctl.checkdev():
-            _update_drive()
-            self.data_changed = False
+        if self.data_changed:
+            if self.drive:
+                systemctl.copy(
+                    os.path.join(ABS_DATA_DIR, CSV_FILE),
+                    os.path.join(self.drive, os.path.sep + CSV_FILE),
+                )
+                self.data_changed = False
+            elif systemctl.checkdev():
+                self._update_drive()
+                self.data_changed = False
+
+    def _update_drive(self):
+        """Writes data to a removable device (Linux-specific!)"""
+        mount_point = systemctl.mount()
+        if mount_point:
+            systemctl.copy(os.path.join(ABS_DATA_DIR, CSV_FILE), os.path.join(mount_point, CSV_FILE))
+            systemctl.unmount()
 
     def parse_data(self, data, source):
         if source not in self.data:
@@ -96,25 +111,25 @@ class DataController:
                     missing = []
                     extra = []
                     for e in expected:
-                        if not e in teams:
+                        if e not in teams:
                             missing.append(e)
                     for t in teams:
-                        if not t in expected:
+                        if t not in expected:
                             extra.append(t)
                     if missing:
                         printing.printf(
-                            f'{match:2}: missing data for team{"s" if len(missing)>1 else ""} {", ".join(missing)}',
+                            f'{match:2}: missing data for team{"s" if len(missing) > 1 else ""} {", ".join(missing)}',
                             style=printing.YELLOW,
                         )
                     if extra:
                         printing.printf(
-                            f'{match:2}: data for team{"s" if len(extra)>1 else ""} not in match: {", ".join(extra)}',
+                            f'{match:2}: data for team{"s" if len(extra) > 1 else ""} not in match: {", ".join(extra)}',
                             style=printing.YELLOW,
                         )
                 else:
                     if len(set(teams)) < 6:
                         printing.printf(
-                            f'{match:2}: missing data, only have team{"s" if len(set(teams))>1 else ""} {", ".join(teams)}',
+                            f'{match:2}: missing data, only have team{"s" if len(set(teams)) > 1 else ""} {", ".join(teams)}',
                             style=printing.YELLOW,
                         )
                     elif len(set(teams)) > 6:
@@ -147,26 +162,18 @@ def read_file(file):
 
 
 def write_file(file, s, mode="a"):
-    with open(ABS_DATA_DIR + file, mode) as f:
+    with open(os.path.join(ABS_DATA_DIR, file), mode) as f:
         f.write(s)
 
 
 def load_json_file():
-    with open(ABS_DATA_DIR + JSON_FILE) as f:
+    with open(os.path.join(ABS_DATA_DIR, JSON_FILE)) as f:
         return json.load(f)
 
 
 def write_json(o):
-    with open(ABS_DATA_DIR + JSON_FILE, "w") as f:
+    with open(os.path.join(ABS_DATA_DIR, JSON_FILE), "w") as f:
         json.dump(o, f)
-
-
-# Writes data to a removable device
-def _update_drive():
-    mount_point = systemctl.mount()
-    if mount_point:
-        systemctl.copy(ABS_DATA_DIR + CSV_FILE, mount_point + "/" + CSV_FILE)
-        systemctl.unmount()
 
 
 def csv_safe(m, f):

@@ -1,11 +1,10 @@
 import bluetooth
-import socket
 from threading import Thread
 
 from dataconstants import MAC_DICT
 from interface import printing
 from controllers.connection import Connection
-from controllers.systemctl import gethostMAC
+from controllers.systemctl import get_host_mac
 
 PORT = 4
 BACKLOG = 1
@@ -18,7 +17,7 @@ class SocketController:
     connecting = False
 
     def __init__(self, on_receive):
-        self.host_mac = gethostMAC()
+        self.host_mac = get_host_mac()
         if self.host_mac:
             # Setup server socket
             self.server_sock = bluetooth.BluetoothSocket(bluetooth.RFCOMM)

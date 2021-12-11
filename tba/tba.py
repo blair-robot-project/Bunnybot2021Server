@@ -1,6 +1,5 @@
 import requests
 
-import tba.API as API
 from interface import printing
 
 
