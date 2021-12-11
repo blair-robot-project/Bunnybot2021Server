@@ -1,4 +1,5 @@
 import os
+import re
 import subprocess as sub
 
 from sys import platform
@@ -190,9 +191,23 @@ def gethostMAC():
             # Mac is not yet fully supported
             out = _run("system_profiler SPBluetoothDataType")
             return out[0].decode("utf8").split("\n")[5].split()[1]
+        elif platform.startswith("win"):
+            out, _ = _run("ipconfig /all")
+            # TODO this is very janky, may break at some point
+            matched = re.search(r"Bluetooth.*?Physical Address *(\. )*: *(?P<mac>[A-Za-z0-9-]{17})", str(out))
+            if matched:
+                mac = matched.group("mac")
+                return mac.replace("-", ":")
+            else:
+                printing.printf(
+                    "No Windows bluetooth adapter found",
+                    style=printing.ERROR,
+                    log=True,
+                    logtag="system.gethostMAC.error",
+                )
         else:
             printing.printf(
-                "Server only runs on Linux, not Windows",
+                "Server does not run on " + platform,
                 style=printing.WARNING,
                 log=True,
                 logtag="system.gethostMAC",
