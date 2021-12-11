@@ -3,42 +3,10 @@ from textwrap import TextWrapper
 
 from interface import printing
 
-LOGO = """
-                     ,:++:,                      
-                   :++++++++:                    
-            _     :++++  ++++:     _              
-          ,++++:  '++++  ++++' ,:++++;           
-         :++  '+:  :++++++++:  +++  ++'          
-  ,++,    + THE +'   ':++:'    :+++++:     ,,:,,    
-:++++++++++++++++++++++++++++++++++++++++++++-++, 
-    +++++ BLAIR ++++ ROBOT +++ PROJECT ++++:   ++'
-'+,++++++++++++++++++++++++++++++++++++++++++-++'
- '++++'        '++++++    ++++++'          '':'' 
-                '++++++  ++++++'                 
-                 '++++++++++++'                  
-                  '++++++++++'                    
-                   '++++++++'                     
-                   :++++++++:                    
-                  .++++++++++.                   
-                 ++++++''++++++                 
-               .++++++'  '++ 4 +.                
-              .++++++      ++ 4 +.               
-             ;+++++:        '+ / +.              
-          ;+++++++,          ,+ 9 +++,           
-         :++++++++:          :++++++++'          
-         '++' '+++'          '++++'+++'          
-          ';   +'              '+'  ;'           
-                                 '              
-"""
-
-
 def print_header(width=None):
     # Fill width of screen
     if not width:
         width = get_terminal_size(fallback=(100, 24))[0]
-
-    logo = LOGO.replace("\n", "\n" + " " * int((width - 50) / 2))
-    printing.printf(logo, style=printing.LOGO)
 
     printing.printf(
         ("{:^" + str(width) + "}").format("FRC Team 449: The Blair Robot Project"),
