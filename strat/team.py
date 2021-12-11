@@ -148,9 +148,9 @@ class Team:
 
     def summary(self, form=Forms.STRAT):
         forms = {
-            Forms.STRAT: self.strat_form,
-            Forms.QUICK: self.quick_form,
-            Forms.DETAIL: self.detail_form,
+            Team.Forms.STRAT: self.strat_form,
+            Team.Forms.QUICK: self.quick_form,
+            Team.Forms.DETAIL: self.detail_form,
         }
         if self.total > 0:
             return forms[form].format(**self.calc_values())
