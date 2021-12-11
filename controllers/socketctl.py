@@ -1,3 +1,4 @@
+import bluetooth
 import socket
 from threading import Thread
 
@@ -6,7 +7,7 @@ from interface import printing
 from controllers.connection import Connection
 from controllers.systemctl import gethostMAC
 
-PORT = 1
+PORT = 4
 BACKLOG = 1
 # Max message size
 SIZE = 1024
@@ -20,12 +21,10 @@ class SocketController:
         self.host_mac = gethostMAC()
         if self.host_mac:
             # Setup server socket
-            self.server_sock = socket.socket(
-                socket.AF_BLUETOOTH, socket.SOCK_STREAM, socket.BTPROTO_RFCOMM
-            )
+            self.server_sock = bluetooth.BluetoothSocket(bluetooth.RFCOMM)
             self.server_sock.bind((self.host_mac, PORT))
             self.server_sock.listen(BACKLOG)
-            self.server_sock.settimeout(None)
+            self.server_sock.settimeout(3)
 
             self.on_receive = on_receive
 
