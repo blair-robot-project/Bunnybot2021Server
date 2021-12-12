@@ -1,7 +1,7 @@
 import json
 from enum import Enum
 
-from dataconstants import Fields
+from dataconstants import GeneralFields
 from interface import printing
 
 
@@ -49,15 +49,15 @@ def invalid_msg(msg, client):
 # TODO: move to datactl
 def summarize_data(data, client_name):
     printing.printf(
-        ("Data" if data[Fields.REVISION] == 0 else "Edit")
+        ("Data" if data[GeneralFields.REVISION.value] == 0 else "Edit")
         + " from "
-        + data[Fields.SCOUT_NAME]
+        + data[GeneralFields.RECORDER_NAME.value]
         + " on "
         + client_name
         + " for team "
-        + str(data[Fields.TEAM])
+        + str(data[GeneralFields.TEAM.value])
         + " in match "
-        + str(data[Fields.MATCH]),
+        + str(data[GeneralFields.MATCH.value]),
         style=printing.NEW_DATA,
         log=True,
         logtag="msgctl.handle_msg",

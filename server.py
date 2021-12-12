@@ -31,7 +31,7 @@ class Server:
         msgctl = MessageController(self.data_controller)
         self.socketctl = SocketController(msgctl.handle_msg)
 
-        self.tba = TBASaver(self.dataconsts.event)
+        self.tba = TBASaver(self.dataconsts.EVENT)
 
     def main(self):
         self.input_handler.start_listening()

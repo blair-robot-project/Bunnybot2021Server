@@ -77,7 +77,7 @@ class Team:
 
     def add_match(self, match):
         self.total += 1
-        fields = self.dataconsts.field_names
+        fields = self.dataconsts.FIELD_NAMES
 
         self.auto_move += match[fields.AUTO_MOVE]
         self.hit_partner += match[fields.HIT_PARTNER]

@@ -7,10 +7,11 @@ from strat.team import Team
 
 # Get the data string to return from the list of teams
 def strategy(alliances, dataconsts: dataconstants.DataConstants, side=None):
+    all_size = dataconsts.ALLIANCE_SIZE
     if type(alliances) != dict:
-        alliances = {"red": alliances[:3], "blue": alliances[3:]}
+        alliances = {"red": alliances[:all_size], "blue": alliances[all_size:]}
     if not side:
-        side = "blue" if dataconsts.team in alliances["blue"] else "red"
+        side = "blue" if dataconsts.TEAM in alliances["blue"] else "red"
 
     teams_joined = alliances[side] + alliances["blue" if side == "red" else "red"]
 
@@ -24,11 +25,11 @@ def strategy(alliances, dataconsts: dataconstants.DataConstants, side=None):
     return (
         teams[0].get_header()
         + "\n"
-        + "\n".join(d[:3])
+        + "\n".join(d[:all_size])
         + "\n---\n"
-        + teams[3].get_header()
+        + teams[all_size].get_header()
         + "\n"
-        + "\n".join(d[3:])
+        + "\n".join(d[all_size:])
         + "\n===\n"
         + "\n".join([t.get_team() + ": " + t.get_comments() for t in teams])
     )
@@ -43,7 +44,7 @@ def _maketeams(team_numbers, dataconsts: dataconstants.DataConstants, opponent_m
     for device in data.values():
         for match in device.values():
             m = match[max(match.keys(), key=int)]
-            t = m[dataconstants.Fields.TEAM]
+            t = m[dataconstants.GeneralFields.TEAM.value]
             if t in team_numbers:
                 try:
                     teams[team_numbers.index(t)].add_match(m)

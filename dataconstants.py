@@ -1,14 +1,16 @@
 import json
 import os
 
+from enum import Enum
+
 from interface import printing
 
 _LOCAL_CONSTANTS_FILE = "local_constants.json"
 FIELD_NAMES_FILE = "fields.txt"
 MAC_DICT_FILE = "mac.json"
 
-JSON_FILE = "data.json"
-CSV_FILE = "data.csv"
+JSON_FILE_NAME = "data.json"
+CSV_FILE_NAME = "data.csv"
 TBA_SAVE_FILE = "tba.json"
 
 MESSAGE_SIZE = 1024
@@ -17,20 +19,26 @@ MESSAGE_SIZE = 1024
 class DataConstants:
     def __init__(self, data_dir):
         self.abs_data_dir = os.path.abspath(data_dir)
+        self.JSON_FILE_PATH = os.path.join(self.abs_data_dir, JSON_FILE_NAME)
+        self.CSV_FILE_PATH = os.path.join(self.abs_data_dir, CSV_FILE_NAME)
+        local_consts_path = os.path.join(self.abs_data_dir, _LOCAL_CONSTANTS_FILE)
         try:
-            local_constants = json.load(open(_LOCAL_CONSTANTS_FILE))
+            local_constants = json.load(open(local_consts_path))
         except FileNotFoundError:
             print("Please enter the following file names and directory locations:")
             local_constants = {"TEAM": input("Team number (e.g. 449) "),
                                "EVENT": input("TBA event id (e.g. '2020mdbet') "),
+                               "ALLIANCE_SIZE": input("Alliance size (default 2)"),
                                "DRIVE": input("Flash drive location (e.g. 'D:') (default none) ")}
-            with open(_LOCAL_CONSTANTS_FILE, "w") as f:
+            local_constants["ALLIANCE_SIZE"] = int(local_constants["ALLIANCE_SIZE"] or 2)
+            with open(local_consts_path, "w") as f:
                 json.dump(local_constants, f)
 
-        self.team = local_constants["TEAM"]
-        self.event = local_constants["EVENT"]
+        self.TEAM = local_constants["TEAM"]
+        self.EVENT = local_constants["EVENT"]
         # The location of the removable device to copy data to
-        self.drive = local_constants["DRIVE"]
+        self.DRIVE = local_constants["DRIVE"]
+        self.ALLIANCE_SIZE = local_constants["ALLIANCE_SIZE"]
 
         # Load the field names from fields.txt
         field_names_file = os.path.join(self.abs_data_dir, FIELD_NAMES_FILE)
@@ -42,10 +50,15 @@ class DataConstants:
         with open(field_names_file) as field_names:
             line = next(field_names)
             column_names = [name.strip() for name in line.split(",")]
-            # `fields` maps snake_case field names to camelCase field names (e.g. "TEAM_ID": "teamId")
+            # `name_dict` maps snake_case field names to camelCase field names (e.g. "TEAM_ID": "teamId")
             name_dict = {name: _camel_case(name) for name in column_names}
-            self.field_names = type("Enum", (), name_dict)()
-            self.order = GeneralFields.ORDER + list(name_dict.values())
+            # add all the general fields too
+            for gen_field in GeneralFields:
+                name_dict[gen_field.name] = gen_field.value
+            self.FIELD_NAMES = type("Enum", (), name_dict)()
+            print("fieldnames=", vars(self.FIELD_NAMES))
+            print("something=", self.FIELD_NAMES.SOMETHING)
+            self.ORDER = list(name_dict.values())
 
         # Get MAC address of clients
         mac_file_path = os.path.join(self.abs_data_dir, MAC_DICT_FILE)
@@ -55,11 +68,11 @@ class DataConstants:
                             log=True,
                             logtag="dataconstants.load_mac_dict")
         with open(mac_file_path) as mac_file:
-            self.mac_dict = json.load(mac_file)
+            self.MAC_DICT = json.load(mac_file)
 
 
-class GeneralFields:
-    """These fields will always be included in the app's messages regardless of the specific game"""
+class GeneralFields(Enum):
+    """These fields will always be included in the app's messages regardless of the specific game."""
     TEAM_ID = "teamId"
     MATCH_ID = "matchId"
     ALLIANCE_COLOR = 'alliance'
@@ -71,14 +84,10 @@ class GeneralFields:
     TEAM = 'team'
     RECORDER_NAME = "recorderName"
 
-    ORDER = [TEAM_ID, MATCH_ID, ALLIANCE_COLOR, NO_SHOW, COMMENTS, REVISION, TIMESTAMP, MATCH, TEAM, RECORDER_NAME]
-
 
 def _camel_case(snake):
-    return snake[0].lower() + ("_" + snake[1:].replace("_", "")).title()[1:]
+    return snake[0].lower() + ("A" + snake[1:].replace("_", "")).title()[1:]
 
-
-Fields, ORDER = 0, 0
 
 MAC_DICT = {
     "00:FC:8B:3B:42:46": "R1 Demeter",

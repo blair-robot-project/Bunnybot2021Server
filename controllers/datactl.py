@@ -5,7 +5,7 @@ from queue import Queue
 import dataconstants
 import interface.printing as printing
 from controllers import systemctl
-from dataconstants import JSON_FILE, CSV_FILE, GeneralFields
+from dataconstants import JSON_FILE_NAME, CSV_FILE_NAME, GeneralFields
 
 
 class DataController:
@@ -16,7 +16,7 @@ class DataController:
     def __init__(self, dataconsts: dataconstants.DataConstants):
         self.dataconsts = dataconsts
         self.data = load_json_file(dataconsts)
-        self.drive = dataconsts.drive
+        self.drive = dataconsts.DRIVE
 
     def queue_data(self, data, source):
         self.data_queue.put((data, source))
@@ -34,11 +34,11 @@ class DataController:
             self.data_changed = True
 
         # If there is a flash drive and there is new data for it, upload the data
-        if self.data_changed:
+        if self.data_changed and os.path.exists(self.dataconsts.CSV_FILE_PATH):
             if self.drive:
                 systemctl.copy(
-                    os.path.join(self.dataconsts.abs_data_dir, CSV_FILE),
-                    os.path.join(self.drive, os.path.sep + CSV_FILE),
+                    self.dataconsts.CSV_FILE_PATH,
+                    os.path.join(self.drive, os.path.sep + CSV_FILE_NAME),
                 )
                 self.data_changed = False
             elif systemctl.checkdev():
@@ -50,39 +50,39 @@ class DataController:
         mount_point = systemctl.mount()
         if mount_point:
             systemctl.copy(
-                os.path.join(self.dataconsts.abs_data_dir, CSV_FILE),
-                os.path.join(mount_point, CSV_FILE),
+                self.dataconsts.CSV_FILE_PATH,
+                os.path.join(mount_point, CSV_FILE_NAME),
             )
             systemctl.unmount()
 
     def parse_data(self, data, source):
         if source not in self.data:
             self.data[source] = dict()
-        if str(data[GeneralFields.TIMESTAMP]) not in self.data[source]:
-            self.data[source][str(data[GeneralFields.TIMESTAMP])] = dict()
-        self.data[source][str(data[GeneralFields.TIMESTAMP])][
-            str(data[GeneralFields.REVISION])
+        if str(data[GeneralFields.TIMESTAMP.value]) not in self.data[source]:
+            self.data[source][str(data[GeneralFields.TIMESTAMP.value])] = dict()
+        self.data[source][str(data[GeneralFields.TIMESTAMP.value])][
+            str(data[GeneralFields.REVISION.value])
         ] = data
 
     def to_csv(self):
-        s = ",".join(self.dataconsts.order) + "\n"
+        s = ",".join(self.dataconsts.ORDER) + "\n"
         for v in self.data.values():
             for id in v.values():
                 m = id[str(max(map(int, id.keys())))]
                 s += (
-                    ",".join(
-                        [
-                            csv_safe(m, f)
-                            if f in m
-                            else missing_field(
-                                f, m[GeneralFields.TIMESTAMP], m[GeneralFields.REVISION]
-                            )
-                            for f in self.dataconsts.order
-                        ]
-                    )
-                    + "\n"
+                        ",".join(
+                            [
+                                csv_safe(m, f)
+                                if f in m
+                                else missing_field(
+                                    f, m[GeneralFields.TIMESTAMP.value], m[GeneralFields.REVISION.value]
+                                )
+                                for f in self.dataconsts.ORDER
+                            ]
+                        )
+                        + "\n"
                 )
-        write_file(CSV_FILE, s, self.dataconsts, mode="w")
+        write_file(CSV_FILE_NAME, s, self.dataconsts, mode="w")
 
     def sync_summary(self, client):
         return {
@@ -98,9 +98,9 @@ class DataController:
         for device in self.data.values():
             for m in device.values():
                 match = m[max(m.keys(), key=int)]
-                if match[GeneralFields.MATCH] not in teams_by_match:
-                    teams_by_match[match[GeneralFields.MATCH]] = []
-                teams_by_match[match[GeneralFields.MATCH]].append(match[GeneralFields.TEAM])
+                if match[GeneralFields.MATCH.value] not in teams_by_match:
+                    teams_by_match[match[GeneralFields.MATCH.value]] = []
+                teams_by_match[match[GeneralFields.MATCH.value]].append(match[GeneralFields.TEAM.value])
 
         max_match = max(teams_by_match.keys(), key=int)
         for i in range(1, int(max_match)):
@@ -165,7 +165,7 @@ def write_file(file, s, dataconsts: dataconstants.DataConstants, mode="a"):
 
 
 def load_json_file(dataconsts: dataconstants.DataConstants):
-    path = os.path.join(dataconsts.abs_data_dir, JSON_FILE)
+    path = os.path.join(dataconsts.abs_data_dir, JSON_FILE_NAME)
     if not os.path.exists(path):
         with open(path, "w") as f:
             f.write("{}")
@@ -174,12 +174,12 @@ def load_json_file(dataconsts: dataconstants.DataConstants):
 
 
 def write_json(o, dataconsts: dataconstants.DataConstants):
-    with open(os.path.join(dataconsts.abs_data_dir, JSON_FILE), "w") as f:
+    with open(os.path.join(dataconsts.abs_data_dir, JSON_FILE_NAME), "w") as f:
         json.dump(o, f)
 
 
 def csv_safe(m, f):
-    if f == GeneralFields.COMMENTS or f == GeneralFields.RECORDER_NAME:
+    if f == GeneralFields.COMMENTS.value or f == GeneralFields.RECORDER_NAME.value:
         return '"' + m[f] + '"'
     else:
         return str(m[f])

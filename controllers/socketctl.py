@@ -37,6 +37,12 @@ class SocketController:
             # Wait for connection
             client_sock, client_info = self.server_sock.accept()
 
+            printing.printf(
+                f"Connected to client! {client_info}",
+                log=True,
+                style=printing.STATUS,
+                logtag="socketctl.connect")
+
             if self.connecting:
                 # Setup connection
                 connection = Connection(

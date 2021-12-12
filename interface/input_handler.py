@@ -28,6 +28,7 @@ class Commands:
 
     def __init__(self, server):
         self.server = server
+        self.dataconsts = server.dataconsts
 
     def quit_(self, *args):
         printing.printf(
@@ -48,7 +49,7 @@ class Commands:
             )
         else:
             printing.printf(
-                "Schedule not available for event:", self.server.dataconsts.event, style=printing.YELLOW
+                "Schedule not available for event:", self.dataconsts.EVENT, style=printing.YELLOW
             )
 
     def send_teams(self, *args):
@@ -57,17 +58,17 @@ class Commands:
             self.server.socketctl.blanket_send(make_message(MsgTypes.TEAM_LIST, teams))
         else:
             printing.printf(
-                "Team list not availible for event:", self.server.dataconsts.event, style=printing.YELLOW
+                "Team list not availible for event:", self.dataconsts.EVENT, style=printing.YELLOW
             )
 
     def strat(self, *args, **kwargs):
         if len(args) == 1:
             printing.printf(
-                strategy(self.server.tba.teams_in_match(*args), self.server.dataconsts),
+                strategy(self.server.tba.teams_in_match(*args), self.dataconsts),
                 style=printing.DATA_OUTPUT,
             )
         else:
-            printing.printf(strategy(args, self.server.dataconsts), style=printing.DATA_OUTPUT)
+            printing.printf(strategy(args, self.dataconsts), style=printing.DATA_OUTPUT)
 
     def data(self, *args):
         self.server.data_controller.drive_update_request()
