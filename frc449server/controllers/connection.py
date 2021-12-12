@@ -1,8 +1,8 @@
 from threading import Thread
 
-from dataconstants import MESSAGE_SIZE
-from interface import printing
-from interface.logger import log
+from frc449server.dataconstants import MESSAGE_SIZE
+from frc449server.interface import printing
+from frc449server.interface.logger import log
 
 
 class Connection:

@@ -3,15 +3,15 @@ from os import _exit as osexit
 
 import sys
 
-import dataconstants
-from controllers import datactl
-from controllers.messagectl import MessageController
-from controllers.socketctl import SocketController
-from interface import printing
-from interface.header import print_header
-from interface.input_handler import InputHandler
-from interface.logger import log
-from tba.tba_saver import TBASaver
+from frc449server import dataconstants
+from frc449server.controllers import datactl
+from frc449server.controllers.messagectl import MessageController
+from frc449server.controllers.socketctl import SocketController
+from frc449server.interface import printing
+from frc449server.interface.header import print_header
+from frc449server.interface.input_handler import InputHandler
+from frc449server.interface.logger import log
+from frc449server.tba.tba_saver import TBASaver
 
 
 class Server:
@@ -33,7 +33,7 @@ class Server:
 
         self.tba = TBASaver(self.dataconsts.EVENT)
 
-    def main(self):
+    def run(self):
         self.input_handler.start_listening()
 
         printing.printf(
@@ -58,8 +58,3 @@ class Server:
 
                 # Quit everything (closes all the many threads)
                 osexit(1)
-
-
-if __name__ == "__main__":
-    server = Server()
-    server.main()

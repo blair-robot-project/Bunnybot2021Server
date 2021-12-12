@@ -1,7 +1,7 @@
 import json
 
-from dataconstants import TBA_SAVE_FILE
-from tba.tba import Event
+from frc449server.dataconstants import TBA_SAVE_FILE
+from frc449server.tba.tba import Event
 
 
 class TBASaver:

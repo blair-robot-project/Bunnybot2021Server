@@ -1,10 +1,10 @@
 import bluetooth
 from threading import Thread
 
-from dataconstants import MAC_DICT
-from interface import printing
-from controllers.connection import Connection
-from controllers.systemctl import get_host_mac
+from frc449server.dataconstants import MAC_DICT
+from frc449server.interface import printing
+from frc449server.controllers.connection import Connection
+from frc449server.controllers.systemctl import get_host_mac
 
 PORT = 4
 BACKLOG = 1

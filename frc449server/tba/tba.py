@@ -1,7 +1,7 @@
 import requests
 
-from interface import printing
-from tba import API
+from frc449server.interface import printing
+from frc449server.tba import API
 
 # TODO: make everything safe on errors and on no internet
 

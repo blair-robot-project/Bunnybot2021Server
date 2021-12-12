@@ -3,7 +3,7 @@ import os
 
 from enum import Enum
 
-from interface import printing
+from frc449server.interface import printing
 
 _LOCAL_CONSTANTS_FILE = "local_constants.json"
 FIELD_NAMES_FILE = "fields.txt"

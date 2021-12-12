@@ -1,6 +1,6 @@
 from enum import Enum
 
-import dataconstants
+from frc449server import dataconstants
 
 
 # Stores and calculates data about a team, and outputs it in the format of the match strategy sheets

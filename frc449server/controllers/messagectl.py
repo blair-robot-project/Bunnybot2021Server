@@ -1,8 +1,8 @@
 import json
 from enum import Enum
 
-from dataconstants import GeneralFields
-from interface import printing
+from frc449server.dataconstants import GeneralFields
+from frc449server.interface import printing
 
 
 class MsgTypes(Enum):

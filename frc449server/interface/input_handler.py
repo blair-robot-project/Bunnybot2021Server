@@ -1,9 +1,9 @@
 from _thread import interrupt_main
 from threading import Thread
 
-from controllers.messagectl import make_message, MsgTypes
-from interface import printing
-from strat.summarize import strategy
+from frc449server.controllers.messagectl import make_message, MsgTypes
+from frc449server.interface import printing
+from frc449server.strat.summarize import strategy
 
 
 class InputHandler:

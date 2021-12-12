@@ -5,7 +5,7 @@ import sys
 from sys import platform
 from time import sleep
 
-from interface import printing
+from frc449server.interface import printing
 
 
 # Runs a command in the shell
