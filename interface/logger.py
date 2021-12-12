@@ -1,6 +1,6 @@
 from time import strftime
 
-from dataconstants import LOG_FILE
+LOG_FILE = "log"
 
 
 def log(tag, msg):

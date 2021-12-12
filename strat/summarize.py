@@ -6,18 +6,18 @@ from strat.team import Team
 
 
 # Get the data string to return from the list of teams
-def strategy(alliances, side=None):
+def strategy(alliances, dataconsts: dataconstants.DataConstants, side=None):
     if type(alliances) != dict:
         alliances = {"red": alliances[:3], "blue": alliances[3:]}
     if not side:
-        side = "blue" if dataconstants.TEAM in alliances["blue"] else "red"
+        side = "blue" if dataconsts.team in alliances["blue"] else "red"
 
     teams_joined = alliances[side] + alliances["blue" if side == "red" else "red"]
 
     log("datactl.getdata", "Strategy data request for " + ", ".join(teams_joined))
 
     opp_mask = slice(len(alliances[side]), None, None)
-    teams = _maketeams(teams_joined, opp_mask)
+    teams = _maketeams(teams_joined, dataconsts, opp_mask)
 
     d = list(map(lambda t: t.summary(), teams))
     log("datactl.getdata", "/".join(d))
@@ -34,10 +34,10 @@ def strategy(alliances, side=None):
     )
 
 
-def _maketeams(team_numbers, opponent_mask=slice(0, 0, None)):
-    data = load_json_file()
+def _maketeams(team_numbers, dataconsts: dataconstants.DataConstants, opponent_mask=slice(0, 0, None)):
+    data = load_json_file(dataconsts)
 
-    teams = [Team(t) for i, t in enumerate(team_numbers)]
+    teams = [Team(t, dataconsts) for i, t in enumerate(team_numbers)]
     list(map(lambda t: t.set_partner(False), teams[opponent_mask]))
 
     for device in data.values():
@@ -80,11 +80,11 @@ def _maketeams(team_numbers, opponent_mask=slice(0, 0, None)):
     return teams
 
 
-def detailed_summary(team_numbers):
-    teams = _maketeams(team_numbers)
+def detailed_summary(team_numbers, dataconsts: dataconstants.DataConstants):
+    teams = _maketeams(team_numbers, dataconsts)
     return [team.summary(form=Team.Forms.DETAIL) for team in teams]
 
 
-def quick_summary(team_numbers):
-    teams = _maketeams(team_numbers)
+def quick_summary(team_numbers, dataconsts: dataconstants.DataConstants):
+    teams = _maketeams(team_numbers, dataconsts)
     return [team.summary(form=Team.Forms.QUICK) for team in teams]

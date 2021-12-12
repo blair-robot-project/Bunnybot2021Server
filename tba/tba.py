@@ -1,9 +1,11 @@
 import requests
 
 from interface import printing
-
+from tba import API
 
 # TODO: make everything safe on errors and on no internet
+
+
 class TBA:
     url = "https://www.thebluealliance.com/api/v3/"
     auth_key = "wUIrT2VGJOsHSz9zIOWHttKm4Ahid37DVYMmgb9gNyrtqS39cZkofL1dBBZNsx13"

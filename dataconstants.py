@@ -1,92 +1,84 @@
 import json
+import os
 
-LOCAL_CONSTANTS_FILE = "local_constants.json"
-try:
-    local_constants = json.load(open(LOCAL_CONSTANTS_FILE))
-except FileNotFoundError:
-    print("Please enter the following file names and directory locations:")
-    local_constants = {
-        "DATA_FILE_NAME": input("Data file base name (e.g. 'data') "),
-        "ABS_DATA_DIR": input("Absolute data directory (e.g. '/home/user/Desktop') "),
-        "TEAM": input("Team number (e.g. 449) "),
-        "EVENT": input("TBA event id (e.g. '2020mdbet') "),
-    }
-    drive = input("Flash drive location (e.g. 'D:') (default none) ")
-    local_constants["DRIVE"] = drive
-    with open(LOCAL_CONSTANTS_FILE, "w") as f:
-        json.dump(local_constants, f)
+from interface import printing
 
-JSON_FILE = local_constants["DATA_FILE_NAME"] + ".json"
-CSV_FILE = local_constants["DATA_FILE_NAME"] + ".csv"
-ABS_DATA_DIR = local_constants["ABS_DATA_DIR"]
-TEAM = local_constants["TEAM"]
-EVENT = local_constants["EVENT"]
-# The location of the removable device to copy data to
-DRIVE = local_constants["DRIVE"]
+_LOCAL_CONSTANTS_FILE = "local_constants.json"
+FIELD_NAMES_FILE = "fields.txt"
+MAC_DICT_FILE = "mac.json"
 
+JSON_FILE = "data.json"
+CSV_FILE = "data.csv"
 TBA_SAVE_FILE = "tba.json"
 
 MESSAGE_SIZE = 1024
 
-LOG_FILE = "log"
 
-column_names = [
-    "TEAM_ID",
-    "MATCH_ID",
-    "ALLIANCE_COLOR",
-    "NO_SHOW",
-    "PRELOAD",
-    "AUTO_MOVE",
-    "HIT_PARTNER",
-    "AUTO_INTAKE",
-    "AUTO_CENTER",
-    "AUTO_HIGH",
-    "AUTO_LOW",
-    "AUTO_MISS",
-    "HIGH",
-    "CENTER",
-    "LOW",
-    "MISS",
-    "SPINNER_ROT",
-    "SPINNER_POS",
-    "ATTEMPTED_CLIMB",
-    "PARK",
-    "SOLO_CLIMB",
-    "DOUBLE_CLIMB",
-    "WAS_LIFTED",
-    "CLIMB_TIME",
-    "ENDGAME_SCORE",
-    "LEVEL",
-    "DEAD",
-    "DEFENSE",
-    "COMMENTS",
-    "SCOUT_NAME",
-    "REVISION",
-    "TIMESTAMP",
-    "MATCH",
-    "TEAM",
-    "SOLO_CLIMB_NYF",
-    "DOUBLE_CLIMB_NYF",
-    "WAS_LIFTED_NYF",
-]
+class DataConstants:
+    def __init__(self, data_dir):
+        self.abs_data_dir = os.path.abspath(data_dir)
+        try:
+            local_constants = json.load(open(_LOCAL_CONSTANTS_FILE))
+        except FileNotFoundError:
+            print("Please enter the following file names and directory locations:")
+            local_constants = {"TEAM": input("Team number (e.g. 449) "),
+                               "EVENT": input("TBA event id (e.g. '2020mdbet') "),
+                               "DRIVE": input("Flash drive location (e.g. 'D:') (default none) ")}
+            with open(_LOCAL_CONSTANTS_FILE, "w") as f:
+                json.dump(local_constants, f)
 
+        self.team = local_constants["TEAM"]
+        self.event = local_constants["EVENT"]
+        # The location of the removable device to copy data to
+        self.drive = local_constants["DRIVE"]
 
-# TODO: do this in a less dumb way
-def _create_fields_enum():
-    """
-    Returns a tuple containing an enum with column names and a list with the string values of the fields of that enum
-    """
+        # Load the field names from fields.txt
+        field_names_file = os.path.join(self.abs_data_dir, FIELD_NAMES_FILE)
+        if not os.path.exists(field_names_file):
+            printing.printf(f"{field_names_file} does not exist",
+                            style=printing.ERROR,
+                            log=True,
+                            logtag="dataconstants.load_fields")
+        with open(field_names_file) as field_names:
+            line = next(field_names)
+            column_names = [name.strip() for name in line.split(",")]
+            # `fields` maps snake_case field names to camelCase field names (e.g. "TEAM_ID": "teamId")
+            name_dict = {name: _camel_case(name) for name in column_names}
+            self.field_names = type("Enum", (), name_dict)()
+            self.order = GeneralFields.ORDER + list(name_dict.values())
 
-    def to_camel_case(snake):
-        return "".join(part.title() for part in snake.split("_"))
-
-    name_dict = {name: to_camel_case(name) for name in column_names}
-    fields_enum = type("Enum", (), name_dict)
-    order = [name_dict[snake] for snake in column_names]
-    return fields_enum(), order
+        # Get MAC address of clients
+        mac_file_path = os.path.join(self.abs_data_dir, MAC_DICT_FILE)
+        if not os.path.exists(mac_file_path):
+            printing.printf(f"{mac_file_path} does not exist",
+                            style=printing.ERROR,
+                            log=True,
+                            logtag="dataconstants.load_mac_dict")
+        with open(mac_file_path) as mac_file:
+            self.mac_dict = json.load(mac_file)
 
 
-Fields, ORDER = _create_fields_enum()
+class GeneralFields:
+    """These fields will always be included in the app's messages regardless of the specific game"""
+    TEAM_ID = "teamId"
+    MATCH_ID = "matchId"
+    ALLIANCE_COLOR = 'alliance'
+    NO_SHOW = 'noShow'
+    COMMENTS = 'comments'
+    REVISION = 'revision'
+    TIMESTAMP = 'timestamp'
+    MATCH = 'match'
+    TEAM = 'team'
+    RECORDER_NAME = "recorderName"
+
+    ORDER = [TEAM_ID, MATCH_ID, ALLIANCE_COLOR, NO_SHOW, COMMENTS, REVISION, TIMESTAMP, MATCH, TEAM, RECORDER_NAME]
+
+
+def _camel_case(snake):
+    return snake[0].lower() + ("_" + snake[1:].replace("_", "")).title()[1:]
+
+
+Fields, ORDER = 0, 0
 
 MAC_DICT = {
     "00:FC:8B:3B:42:46": "R1 Demeter",

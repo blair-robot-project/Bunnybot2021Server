@@ -1,18 +1,24 @@
 from enum import Enum
 
-from dataconstants import Fields
+import dataconstants
 
 
 # Stores and calculates data about a team, and outputs it in the format of the match strategy sheets
 class Team:
     partner = True
-    ally_header = "team: cross | shots | taken(M/A) |#|  low(M/A) |   high(I/M/A)  |.| spin |#| climb | time |##| hitpart|level|dead(b:h:d)|def(p:a)"
-    ally_form = "{team:>4s}:  {auto_move:3d}% |   {auto_target:2s}  | {auto_m:4.1f}/{auto_a:4.1f}  |#| {low_m:4.1f}/{low_a:4.1f} | {high_i:4.1f}/{high_m:4.1f}/{high_a:4.1f} |.|  {spinner:1s}   |#| {climb_success:2d}/{climb_attempts:2d} |  {climb_time:2.0f}  |##|  {hit_partner:3d}%  | {level:3d}%|   {dead_b:1d}:{dead_hd:1d}:{dead_d:1d}   |  {defense_p:1d}:{defense_a:1d}"
+    ally_header = "team: cross | shots | taken(M/A) |#|  low(M/A) |   high(I/M/A)  |.| spin |#| climb | time |##| " \
+                  "hitpart|level|dead(b:h:d)|def(p:a) "
+    ally_form = "{team:>4s}:  {auto_move:3d}% |   {auto_target:2s}  | {auto_m:4.1f}/{auto_a:4.1f}  |#| " \
+                "{low_m:4.1f}/{low_a:4.1f} | {high_i:4.1f}/{high_m:4.1f}/{high_a:4.1f} |.|  {spinner:1s} " \
+                "  |#| {climb_success:2d}/{climb_attempts:2d} |  {climb_time:2.0f}  |##|  {hit_partner:3d}%" \
+                "  | {level:3d}%|   {dead_b:1d}:{dead_hd:1d}:{dead_d:1d}   |  {defense_p:1d}:{defense_a:1d} "
 
     opp_header = (
         "team:  auto |.| spin |  low(M/A) |   high(I/M/A)  |.| climb |##| defense(p:a)"
     )
-    opp_form = "{team:>4s}:  {auto_pts:4.1f} |.|   {spinner:1s}  | {low_m:4.1f}/{low_a:4.1f} | {high_i:4.1f}/{high_m:4.1f}/{high_a:4.1f} |.| {climb_success:2d}/{climb_attempts:2d} |##| {defense_p:1d}:{defense_a:1d}"
+    opp_form = "{team:>4s}:  {auto_pts:4.1f} |.|   {spinner:1s}  | {low_m:4.1f}/{low_a:4.1f} |" \
+               " {high_i:4.1f}/{high_m:4.1f}/{high_a:4.1f} |.| {climb_success:2d}/{climb_attempts:2d}" \
+               " |##| {defense_p:1d}:{defense_a:1d} "
 
     quick_form = (
         "\033[7m\033[95m{team:4s}\033[0m SS:{autoh:3d}:{autoc:3d} H:{allhatch:4.1f} C:{allcargo:4.1f} "
@@ -28,8 +34,9 @@ class Team:
         QUICK = "quick"
         DETAIL = "detail"
 
-    def __init__(self, team, partner=True):
+    def __init__(self, team, dataconsts: dataconstants.DataConstants, partner=True):
         self.total = 0
+        self.dataconsts = dataconsts
 
         self.team = team
         (
@@ -70,32 +77,33 @@ class Team:
 
     def add_match(self, match):
         self.total += 1
+        fields = self.dataconsts.field_names
 
-        self.auto_move += match[Fields.AUTO_MOVE]
-        self.hit_partner += match[Fields.HIT_PARTNER]
-        self.auto_intake += match[Fields.AUTO_INTAKE]
-        self.auto_low += match[Fields.AUTO_LOW]
-        self.auto_high += match[Fields.AUTO_HIGH]
-        self.auto_center += match[Fields.AUTO_CENTER]
-        self.auto_miss += match[Fields.AUTO_MISS]
+        self.auto_move += match[fields.AUTO_MOVE]
+        self.hit_partner += match[fields.HIT_PARTNER]
+        self.auto_intake += match[fields.AUTO_INTAKE]
+        self.auto_low += match[fields.AUTO_LOW]
+        self.auto_high += match[fields.AUTO_HIGH]
+        self.auto_center += match[fields.AUTO_CENTER]
+        self.auto_miss += match[fields.AUTO_MISS]
 
-        self.low += match[Fields.LOW]
-        self.high += match[Fields.HIGH]
-        self.center += match[Fields.CENTER]
-        self.miss += match[Fields.MISS]
-        self.spinner2 = self.spinner2 or match[Fields.SPINNER_ROT]
-        self.spinner3 = self.spinner3 or match[Fields.SPINNER_POS]
+        self.low += match[fields.LOW]
+        self.high += match[fields.HIGH]
+        self.center += match[fields.CENTER]
+        self.miss += match[fields.MISS]
+        self.spinner2 = self.spinner2 or match[fields.SPINNER_ROT]
+        self.spinner3 = self.spinner3 or match[fields.SPINNER_POS]
 
-        self.climb_attempts += match[Fields.ATTEMPTED_CLIMB] in (1, 2)
-        if match[Fields.SOLO_CLIMB_NYF] == 1 or match[Fields.DOUBLE_CLIMB_NYF] == 1:
+        self.climb_attempts += match[fields.ATTEMPTED_CLIMB] in (1, 2)
+        if match[fields.SOLO_CLIMB_NYF] == 1 or match[fields.DOUBLE_CLIMB_NYF] == 1:
             self.climb_success += 1
-            self.climb_time.append(match[Fields.CLIMB_TIME])
-            # self.level.append(match[Fields.LEVEL])
+            self.climb_time.append(match[fields.CLIMB_TIME])
+            # self.level.append(match[fields.LEVEL])
 
-        self.dead.append(match[Fields.DEAD])
-        self.defense.append(match[Fields.DEFENSE])
+        self.dead.append(match[fields.DEAD])
+        self.defense.append(match[fields.DEFENSE])
 
-        comment = match[Fields.COMMENTS]
+        comment = match[fields.COMMENTS]
         if comment:
             self.comments.append(comment)
 
